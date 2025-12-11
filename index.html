@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$ whoami - 黑客简历</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 矩阵背景效果 */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .terminal {
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            margin: 20px 0;
+            padding: 20px;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #00ff00;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #00ff00;
+        }
+
+        .terminal-button.close { background-color: #ff0000; }
+        .terminal-button.minimize { background-color: #ffff00; }
+        .terminal-button.maximize { background-color: #00ff00; }
+
+        .terminal-title {
+            margin-left: 15px;
+            color: #00ff00;
+            font-size: 14px;
+        }
+
+        h1, h2, h3 {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            margin: 15px 0;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% {
+                text-shadow: 0 0 10px #00ff00;
+            }
+            95% {
+                text-shadow: -2px 0 10px #ff0000, 2px 0 10px #0000ff;
+            }
+        }
+
+        .prompt {
+            color: #00ffff;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .command {
+            color: #ffff00;
+        }
+
+        .output {
+            color: #00ff00;
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 3px solid #00ff00;
+        }
+
+        .skill-bar {
+            margin: 10px 0;
+        }
+
+        .skill-name {
+            display: inline-block;
+            width: 150px;
+        }
+
+        .bar {
+            display: inline-block;
+            height: 20px;
+            background-color: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            width: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background-color: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            transition: width 2s ease-in-out;
+        }
+
+        .link {
+            color: #00ffff;
+            text-decoration: none;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .link:hover {
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .link::before {
+            content: '>';
+            margin-right: 5px;
+            color: #00ff00;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .ascii-art {
+            color: #00ff00;
+            white-space: pre;
+            font-size: 10px;
+            line-height: 1.2;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40, end);
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #00ff00;
+            color: #00ff00;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .bar {
+                width: 200px;
+            }
+            
+            .skill-name {
+                width: 100px;
+            }
+
+            .ascii-art {
+                font-size: 8px;
+            }
+        }
+
+        .status-indicator {
+            color: #00ff00;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .access-granted {
+            color: #00ff00;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+    
+    <div class="container">
+        <!-- ASCII Art Logo -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">root@darknet:~</div>
+            </div>
+            <div class="ascii-art">
+    ____  ___   ______ __ __ __________     ____  ____  ____  ___________ __    ______
+   / __ \/   | / ____// //_// ____/ __ \   / __ \/ __ \/ __ \/ ____/  _// /   / ____/
+  / /_/ / /| |/ /    / ,<  / __/ / /_/ /  / /_/ / /_/ / / / / /_   / / / /   / __/   
+ / _, _/ ___ / /____/ /| |/ /___/ _, _/  / ____/ _, _/ /_/ / __/ _/ / / /___/ /___   
+/_/ |_/_/  |_\____/_/ |_/_____/_/ |_|  /_/   /_/ |_|\____/_/   /___//_____/_____/   
+            </div>
+            <p><span class="prompt">$</span> <span class="command">./init_profile.sh</span></p>
+            <p class="output access-granted">[✓] ACCESS GRANTED</p>
+            <p class="output">Initializing profile... <span class="blink">█</span></p>
+        </div>
+
+        <!-- Header -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">whoami.sh</div>
+            </div>
+            <h1>> 张子墨 (Zimo Zhang)</h1>
+            <p><span class="prompt">$</span> <span class="command">cat /etc/profile</span></p>
+            <div class="output">
+                <p>职位: 高级渗透测试工程师 | 全栈黑客</p>
+                <p>位置: 0x2847°N, 0x7769°E (Latitude/Longitude in Hex)</p>
+                <p>状态: <span class="status-indicator">[● ONLINE]</span></p>
+                <p>PGP: 0xDEADBEEF1337C0DE</p>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">about.txt</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> cat about.txt</h2>
+            <div class="output section">
+                <p>一名充满激情的网络安全专家和全栈开发者，专注于挖掘系统漏洞和构建安全架构。</p>
+                <p>擅长逆向工程、渗透测试、漏洞挖掘和安全代码审计。</p>
+                <p>相信"攻击是最好的防御"，致力于让互联网更安全。</p>
+                <p class="command">>>> 黑帽大会演讲者 | CVE贡献者 | 开源安全工具开发者</p>
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">skills.db</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> ./scan_skills.py --verbose</h2>
+            <div class="output section" id="skills-section">
+                <p class="command">[*] Scanning skill database...</p>
+                <div class="skill-bar">
+                    <span class="skill-name">Penetration Testing</span>
+                    <span class="bar"><span class="bar-fill" data-width="95"></span></span>
+                    <span>95%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Python</span>
+                    <span class="bar"><span class="bar-fill" data-width="90"></span></span>
+                    <span>90%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">C/C++/Assembly</span>
+                    <span class="bar"><span class="bar-fill" data-width="85"></span></span>
+                    <span>85%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Reverse Engineering</span>
+                    <span class="bar"><span class="bar-fill" data-width="88"></span></span>
+                    <span>88%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Web Exploitation</span>
+                    <span class="bar"><span class="bar-fill" data-width="92"></span></span>
+                    <span>92%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Network Security</span>
+                    <span class="bar"><span class="bar-fill" data-width="87"></span></span>
+                    <span>87%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Cryptography</span>
+                    <span class="bar"><span class="bar-fill" data-width="80"></span></span>
+                    <span>80%</span>
+                </div>
+                <div class="skill-bar">
+                    <span class="skill-name">Linux/Unix</span>
+                    <span class="bar"><span class="bar-fill" data-width="93"></span></span>
+                    <span>93%</span>
+                </div>
+                <p class="command" style="margin-top: 15px;">[✓] Scan complete.</p>
+            </div>
+        </div>
+
+        <!-- Experience -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">experience.log</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> tail -f /var/log/experience.log</h2>
+            <div class="output section">
+                <h3 class="command">▸ 高级渗透测试工程师 @ CyberShield Security</h3>
+                <p style="color: #888;">2022.06 - 至今</p>
+                <p>• 领导红队进行高级持续性威胁(APT)模拟演练</p>
+                <p>• 发现并负责修复关键基础设施中的零日漏洞</p>
+                <p>• 开发自动化渗透测试框架，提升测试效率300%</p>
+                <p>• 为客户提供安全架构咨询和代码审计服务</p>
+                <br>
+                
+                <h3 class="command">▸ 安全研究员 @ DarkNet Labs</h3>
+                <p style="color: #888;">2020.03 - 2022.05</p>
+                <p>• 专注于Web应用安全和移动应用逆向工程</p>
+                <p>• 发现多个知名平台的SQL注入和XSS漏洞</p>
+                <p>• 贡献了8个CVE编号的安全漏洞</p>
+                <p>• 撰写安全技术博客，累计阅读量50万+</p>
+                <br>
+
+                <h3 class="command">▸ 全栈开发工程师 @ TechStart Inc.</h3>
+                <p style="color: #888;">2018.07 - 2020.02</p>
+                <p>• 使用Python/Django和React构建企业级Web应用</p>
+                <p>• 实施DevSecOps流程，集成安全测试到CI/CD管道</p>
+                <p>• 设计和实现OAuth2.0认证系统</p>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">projects.json</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> ls -la ~/projects/</h2>
+            <div class="output section">
+                <h3 class="command">◉ ShadowScan - 自动化漏洞扫描器</h3>
+                <p>• 基于Python开发的分布式漏洞扫描平台</p>
+                <p>• 集成OWASP Top 10检测模块和自定义PoC引擎</p>
+                <p>• GitHub Stars: 2.3k | Forks: 450</p>
+                <br>
+
+                <h3 class="command">◉ CryptoBreaker - 密码学分析工具</h3>
+                <p>• 实现多种经典和现代密码算法的分析和破解</p>
+                <p>• 支持频率分析、差分攻击、中间相遇攻击等</p>
+                <p>• 在CTF比赛中被广泛使用</p>
+                <br>
+
+                <h3 class="command">◉ ReverseKit - 逆向工程工具集</h3>
+                <p>• 集成反汇编、反编译、动态调试功能</p>
+                <p>• 支持PE/ELF/Mach-O多种文件格式</p>
+                <p>• 跨平台支持Windows/Linux/macOS</p>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">achievements.dat</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> cat achievements.dat</h2>
+            <div class="output section">
+                <p>🏆 DEF CON CTF 决赛入围选手 (2023)</p>
+                <p>🏆 贡献8个CVE漏洞编号</p>
+                <p>🏆 Black Hat Asia 安全演讲嘉宾 (2022)</p>
+                <p>🏆 OSCP (Offensive Security Certified Professional)</p>
+                <p>🏆 CEH (Certified Ethical Hacker)</p>
+                <p>🏆 开源项目累计3k+ GitHub Stars</p>
+                <p>🏆 HackerOne漏洞赏金猎人 - 排名Top 100</p>
+            </div>
+        </div>
+
+        <!-- Education -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">education.txt</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> grep -r "degree" education.txt</h2>
+            <div class="output section">
+                <h3 class="command">▸ 计算机科学与技术学士</h3>
+                <p>清华大学 | 2014 - 2018</p>
+                <p>专业方向: 网络安全与密码学</p>
+                <p>GPA: 3.8/4.0</p>
+                <br>
+
+                <h3 class="command">▸ 网络安全硕士</h3>
+                <p>中国科学技术大学 | 2018 - 2020</p>
+                <p>研究方向: 漏洞挖掘与程序分析</p>
+                <p>论文: 基于符号执行的自动化漏洞检测技术研究</p>
+            </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-buttons">
+                    <div class="terminal-button close"></div>
+                    <div class="terminal-button minimize"></div>
+                    <div class="terminal-button maximize"></div>
+                </div>
+                <div class="terminal-title">contact.sh</div>
+            </div>
+            <h2><span class="prompt">root@darknet:~#</span> ./contact.sh --all</h2>
+            <div class="output section">
+                <p class="command">[*] Establishing encrypted connection...</p>
+                <p><a href="mailto:zimo.zhang@protonmail.com" class="link">Email: zimo.zhang@protonmail.com</a></p>
+                <p><a href="https://github.com/zimohacker" class="link" target="_blank">GitHub: github.com/zimohacker</a></p>
+                <p><a href="https://twitter.com/zimo_sec" class="link" target="_blank">Twitter: @zimo_sec</a></p>
+                <p><a href="https://blog.zimosec.com" class="link" target="_blank">Blog: blog.zimosec.com</a></p>
+                <p><span class="link">Telegram: @zimohacker</span></p>
+                <p class="command" style="margin-top: 15px;">[✓] Connection ready. Encryption: AES-256</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="terminal">
+            <div class="footer">
+                <p><span class="prompt">$</span> <span class="command">echo "Stay curious, stay secure."</span></p>
+                <p class="output">Stay curious, stay secure.</p>
+                <p style="margin-top: 10px;">© 2025 Zimo Zhang | Last Updated: <span id="lastUpdate"></span></p>
+                <p class="blink" style="margin-top: 10px;">_</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix Rain Effect
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const matrix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * canvas.height;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff00';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = matrix[Math.floor(Math.random() * matrix.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 35);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Skill bars animation
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const bars = document.querySelectorAll('.bar-fill');
+                bars.forEach(bar => {
+                    const width = bar.getAttribute('data-width');
+                    bar.style.width = width + '%';
+                });
+            }, 500);
+        });
+
+        // Update last modified date
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-CN');
+
+        // Console Easter Egg
+        console.log('%c╔═══════════════════════════════════════╗', 'color: #00ff00; font-family: monospace;');
+        console.log('%c║   Welcome to the Matrix, hacker!      ║', 'color: #00ff00; font-family: monospace;');
+        console.log('%c║   Type: konami() for secret access    ║', 'color: #00ff00; font-family: monospace;');
+        console.log('%c╚═══════════════════════════════════════╝', 'color: #00ff00; font-family: monospace;');
+
+        window.konami = function() {
+            console.log('%c[ACCESS GRANTED]', 'color: #00ff00; font-size: 20px; font-weight: bold;');
+            console.log('%cYou found the secret! Here\'s my real GitHub: https://github.com/JingyaoWang1991', 'color: #00ffff;');
+        };
+
+        // Prevent right-click (optional hacker effect)
+        // document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Add glitch effect on hover to h1
+        const h1 = document.querySelector('h1');
+        if (h1) {
+            h1.addEventListener('mouseenter', function() {
+                this.style.animation = 'none';
+                setTimeout(() => {
+                    this.style.animation = 'glitch 0.3s infinite';
+                }, 10);
+            });
+            
+            h1.addEventListener('mouseleave', function() {
+                this.style.animation = 'glitch 3s infinite';
+            });
+        }
+    </script>
+</body>
+</html>
+
